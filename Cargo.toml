@@ -1,0 +1,8 @@
+[package]
+name = "carpool"
+version = "0.1.0"
+authors = ["Jacob Budin <self@jacobbudin.com>"]
+
+[dependencies]
+liner = "0.1.1"
+toml = "0.4"
