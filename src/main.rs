@@ -28,6 +28,15 @@ fn main() {
                         }
                         println!("{}", cache.get(&key_trimmed).unwrap_or(&empty_value));
                     }
+                    s if s.starts_with("del ") =>  {
+                        let (_, key) = s.split_at(4);
+                        let key_trimmed = String::from(key.trim());
+                        if key_trimmed.find(' ').is_some() {
+                            println!("key cannot contain space");
+                            continue
+                        }
+                        let _ = cache.remove(&key_trimmed);
+                    }
                     s if s.starts_with("set ") =>  {
                         let (_, key_value) = s.split_at(4);
                         match key_value.find(' ') {
