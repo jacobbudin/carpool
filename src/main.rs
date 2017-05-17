@@ -18,17 +18,14 @@ fn main() {
         match res {
             Ok(res) => {
                 match res.as_str() {
-                    "emacs" => {
-                        con.key_bindings = KeyBindings::Emacs;
-                        println!("emacs mode");
-                    }
-                    "vi" | "vim" =>  {
-                        con.key_bindings = KeyBindings::Vi;
-                        println!("vi mode");
-                    }
+                    s if s.trim() == "" =>  {}
                     s if s.starts_with("get ") =>  {
                         let (_, key) = s.split_at(4);
                         let key_trimmed = String::from(key.trim());
+                        if key_trimmed.find(' ').is_some() {
+                            println!("key cannot contain space");
+                            continue
+                        }
                         println!("{}", cache.get(&key_trimmed).unwrap_or(&empty_value));
                     }
                     s if s.starts_with("set ") =>  {
@@ -43,10 +40,25 @@ fn main() {
                             None => println!("no value specified")
                         }
                     }
+                    "keys" =>  {
+                        for key in cache.keys() {
+                            println!("{}", key);
+                        }
+                    }
+                    "emacs" => {
+                        con.key_bindings = KeyBindings::Emacs;
+                        println!("emacs mode");
+                    }
+                    "vi" | "vim" =>  {
+                        con.key_bindings = KeyBindings::Vi;
+                        println!("vi mode");
+                    }
                     "exit" =>  {
                         break;
                     }
-                    _ => {}
+                    _ => {
+                        println!("operation not defined")
+                    }
                 }
 
                 con.history.push(res.into()).unwrap();
