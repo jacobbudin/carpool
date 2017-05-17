@@ -8,10 +8,7 @@ use std::io::ErrorKind;
 fn main() {
     let mut cache: HashMap<String, String> = HashMap::new();
 
-    // TODO: Implement actual op-parsing
-    let dummy_key = String::from("some_key");
-    let dummy_value = String::from("123");
-    let empty_value = String::from("0");
+    let empty_value = String::from("");
 
     let mut con = Context::new();
 
@@ -29,11 +26,22 @@ fn main() {
                         con.key_bindings = KeyBindings::Vi;
                         println!("vi mode");
                     }
-                    s if s.starts_with("get") =>  {
-                        println!("{}", cache.get(&dummy_key).unwrap_or(&empty_value));
+                    s if s.starts_with("get ") =>  {
+                        let (_, key) = s.split_at(4);
+                        let key_trimmed = String::from(key.trim());
+                        println!("{}", cache.get(&key_trimmed).unwrap_or(&empty_value));
                     }
-                    s if s.starts_with("set") =>  {
-                        cache.insert(dummy_key.clone(), dummy_value.clone());
+                    s if s.starts_with("set ") =>  {
+                        let (_, key_value) = s.split_at(4);
+                        match key_value.find(' ') {
+                            Some(i) => {
+                                let (key, value) = key_value.split_at(i);
+                                let key_trimmed = String::from(key.trim());
+                                let value_trimmed = String::from(value.trim());
+                                cache.insert(key_trimmed, value_trimmed);
+                            }
+                            None => println!("no value specified")
+                        }
                     }
                     "exit" =>  {
                         break;
