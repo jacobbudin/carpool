@@ -6,7 +6,7 @@ use std::collections::HashMap;
 use std::io::ErrorKind;
 
 fn main() {
-    let mut cache: HashMap<String, String> = HashMap::new();
+    let mut cache = Box::new(HashMap::new());
 
     let empty_value = String::from("");
 
