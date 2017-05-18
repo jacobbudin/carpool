@@ -1,17 +1,45 @@
 extern crate liner;
+#[macro_use]
+extern crate serde_derive;
+extern crate toml;
 
 use liner::Context;
 use liner::KeyBindings;
 use std::collections::HashMap;
-use std::io::ErrorKind;
+use std::fs::File;
+use std::io::{ErrorKind, Read};
 use std::mem;
+use std::path::Path;
+
+#[derive(Deserialize)]
+struct CacheConfig {
+    ttl: usize,
+}
+
+#[derive(Deserialize)]
+struct Config {
+    cache: CacheConfig,
+}
 
 fn main() {
+    // Open and read configuration
+    let config_path = Path::new("etc/carpool.toml");
+    let mut config_file = match File::open(&config_path) {
+        Err(_) => panic!("couldn't open {:?}", config_path),
+        Ok(file) => file,
+    };
+
+    let mut config_content = String::new();
+    let _ = config_file.read_to_string(&mut config_content);
+
+    let config: Config = toml::from_str(config_content.as_str()).unwrap();
+
+    // Set up cache
     let mut cache = Box::new(HashMap::new());
     let mut bytes_used:usize = 0;
-
     let empty_value = String::from("");
 
+    // Start REPL
     let mut con = Context::new();
 
     loop {

@@ -1,0 +1,4 @@
+# Carpool configuration
+
+[cache]
+ttl = 60
