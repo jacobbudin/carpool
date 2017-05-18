@@ -6,10 +6,13 @@ extern crate toml;
 use liner::Context;
 use liner::KeyBindings;
 use std::collections::HashMap;
+use std::collections::hash_map::Keys;
 use std::fs::File;
 use std::io::{ErrorKind, Read};
 use std::mem;
 use std::path::Path;
+
+type Data = HashMap<String, String>;
 
 #[derive(Deserialize)]
 struct CacheConfig {
@@ -19,6 +22,41 @@ struct CacheConfig {
 #[derive(Deserialize)]
 struct Config {
     cache: CacheConfig,
+}
+
+struct Cache {
+    data: Box<Data>,
+    config: Config,
+    bytes: usize
+}
+
+impl Cache {
+    fn clear(&mut self) {
+        self.data.clear();
+        self.bytes = 0;
+    }
+
+    fn get(&mut self, key: &String) -> Option<&String> {
+        self.data.get(key)
+    }
+
+    fn set(&mut self, key: String, value: String) {
+        self.bytes += mem::size_of_val(&key) + mem::size_of_val(&value);
+        self.data.insert(key, value);
+    }
+
+    fn delete(&mut self, key: &String) {
+        let value = self.data.remove(key);
+        self.bytes -= mem::size_of_val(key) + mem::size_of_val(&value);
+    }
+
+    fn keys(&self) -> Keys<String, String> {
+        self.data.keys()
+    }
+
+    fn size(&self) -> usize {
+        self.bytes
+    }
 }
 
 fn main() {
@@ -35,8 +73,12 @@ fn main() {
     let config: Config = toml::from_str(config_content.as_str()).unwrap();
 
     // Set up cache
-    let mut cache = Box::new(HashMap::new());
-    let mut bytes_used:usize = 0;
+    let mut cache = Cache {
+        config: config,
+        data: Box::new(HashMap::new()),
+        bytes: 0,
+    };
+
     let empty_value = String::from("");
 
     // Start REPL
@@ -65,8 +107,7 @@ fn main() {
                             println!("key cannot contain space");
                             continue
                         }
-                        let value = cache.remove(&key_trimmed);
-                        bytes_used -= mem::size_of_val(&key_trimmed) + mem::size_of_val(&value);
+                        let value = cache.delete(&key_trimmed);
                     }
                     s if s.starts_with("set ") =>  {
                         let (_, key_value) = s.split_at(4);
@@ -75,14 +116,13 @@ fn main() {
                                 let (key, value) = key_value.split_at(i);
                                 let key_trimmed = String::from(key.trim());
                                 let value_trimmed = String::from(value.trim());
-                                bytes_used += mem::size_of_val(&key_trimmed) + mem::size_of_val(&value_trimmed);
-                                cache.insert(key_trimmed, value_trimmed);
+                                cache.set(key_trimmed, value_trimmed);
                             }
                             None => println!("no value specified")
                         }
                     }
                     "size" =>  {
-                        println!("{} bytes", bytes_used);
+                        println!("{} bytes", cache.size());
                     }
                     "keys" =>  {
                         for key in cache.keys() {
