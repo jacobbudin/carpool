@@ -4,9 +4,11 @@ use liner::Context;
 use liner::KeyBindings;
 use std::collections::HashMap;
 use std::io::ErrorKind;
+use std::mem;
 
 fn main() {
     let mut cache = Box::new(HashMap::new());
+    let mut bytes_used:usize = 0;
 
     let empty_value = String::from("");
 
@@ -35,7 +37,8 @@ fn main() {
                             println!("key cannot contain space");
                             continue
                         }
-                        let _ = cache.remove(&key_trimmed);
+                        let value = cache.remove(&key_trimmed);
+                        bytes_used -= mem::size_of_val(&key_trimmed) + mem::size_of_val(&value);
                     }
                     s if s.starts_with("set ") =>  {
                         let (_, key_value) = s.split_at(4);
@@ -44,10 +47,14 @@ fn main() {
                                 let (key, value) = key_value.split_at(i);
                                 let key_trimmed = String::from(key.trim());
                                 let value_trimmed = String::from(value.trim());
+                                bytes_used += mem::size_of_val(&key_trimmed) + mem::size_of_val(&value_trimmed);
                                 cache.insert(key_trimmed, value_trimmed);
                             }
                             None => println!("no value specified")
                         }
+                    }
+                    "size" =>  {
+                        println!("{} bytes", bytes_used);
                     }
                     "keys" =>  {
                         for key in cache.keys() {
