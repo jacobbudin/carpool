@@ -30,6 +30,10 @@ struct Cache {
     bytes: usize
 }
 
+fn get_size_of_string(s: &String) -> usize {
+    return s.len() * std::mem::size_of::<u8>();
+}
+
 impl Cache {
     fn clear(&mut self) {
         self.data.clear();
@@ -41,13 +45,21 @@ impl Cache {
     }
 
     fn set(&mut self, key: String, value: String) {
-        self.bytes += mem::size_of_val(&key) + mem::size_of_val(&value);
+        if let Some(previous_value) = self.data.get(&key) {
+            self.bytes -= get_size_of_string(previous_value);
+        }
+        else {
+            self.bytes += get_size_of_string(&key);
+        }
+        self.bytes += get_size_of_string(&value);
+
         self.data.insert(key, value);
     }
 
     fn delete(&mut self, key: &String) {
-        let value = self.data.remove(key);
-        self.bytes -= mem::size_of_val(key) + mem::size_of_val(&value);
+        if let Some(value) = self.data.remove(key) {
+            self.bytes -= get_size_of_string(&value) + get_size_of_string(key);
+        }
     }
 
     fn keys(&self) -> Keys<String, String> {
