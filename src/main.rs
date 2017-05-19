@@ -66,6 +66,10 @@ impl Cache {
         self.data.keys()
     }
 
+    fn count(&self) -> usize {
+        self.data.len()
+    }
+
     fn size(&self) -> usize {
         self.bytes
     }
@@ -132,6 +136,9 @@ fn main() {
                             }
                             None => println!("no value specified")
                         }
+                    }
+                    "count" =>  {
+                        println!("{}", cache.count());
                     }
                     "size" =>  {
                         println!("{} bytes", cache.size());
