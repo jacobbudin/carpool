@@ -2,6 +2,14 @@
 name = "carpool"
 version = "0.1.0"
 authors = ["Jacob Budin <self@jacobbudin.com>"]
+description = "GraphQL cache proxy"
+repository = "https://github.com/jacobbudin/carpool"
+readme = "README.md"
+keywords = ["graphql", "cache"]
+license = "MIT"
+
+[badges]
+travis-ci = { repository = "jacobbudin/carpool" }
 
 [dependencies]
 liner = "0.1.1"
