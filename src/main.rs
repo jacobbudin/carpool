@@ -75,6 +75,7 @@ impl Cache {
     }
 }
 
+#[cfg(not(test))]
 fn main() {
     // Open and read configuration
     let config_path = Path::new("etc/carpool.toml");
@@ -178,5 +179,20 @@ fn main() {
                 }
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn get_size_of_simple_string() {
+        assert_eq!(get_size_of_string(&String::from("hello")), 5usize);
+    }
+
+    #[test]
+    fn get_size_of_emoji_string() {
+        assert_eq!(get_size_of_string(&String::from("❤️")), 6usize);
     }
 }
