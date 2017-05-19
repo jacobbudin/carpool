@@ -3,87 +3,15 @@ extern crate liner;
 extern crate serde_derive;
 extern crate toml;
 
+mod cache;
+mod config;
+mod mem;
+
 use liner::Context;
 use liner::KeyBindings;
-use std::collections::HashMap;
-use std::collections::hash_map::Keys;
 use std::fs::File;
 use std::io::{ErrorKind, Read};
 use std::path::Path;
-
-type Data = HashMap<String, String>;
-
-#[allow(dead_code)]
-#[derive(Deserialize)]
-struct CacheConfig {
-    ttl: usize,
-}
-
-#[allow(dead_code)]
-#[derive(Deserialize)]
-struct Config {
-    cache: CacheConfig,
-}
-
-#[allow(dead_code)]
-struct Cache {
-    data: Box<Data>,
-    config: Config,
-    bytes: usize
-}
-
-fn get_size_of_string(s: &String) -> usize {
-    return s.len() * std::mem::size_of::<u8>();
-}
-
-impl Cache {
-    fn new(config: Config) -> Cache {
-        Self {
-            config: config,
-            data: Box::new(HashMap::new()),
-            bytes: 0,
-        }
-    }
-
-    fn empty(&mut self) {
-        self.data.clear();
-        self.bytes = 0;
-    }
-
-    fn get(&mut self, key: &String) -> Option<&String> {
-        self.data.get(key)
-    }
-
-    fn set(&mut self, key: String, value: String) {
-        if let Some(previous_value) = self.data.get(&key) {
-            self.bytes -= get_size_of_string(previous_value);
-        }
-        else {
-            self.bytes += get_size_of_string(&key);
-        }
-        self.bytes += get_size_of_string(&value);
-
-        self.data.insert(key, value);
-    }
-
-    fn delete(&mut self, key: &String) {
-        if let Some(value) = self.data.remove(key) {
-            self.bytes -= get_size_of_string(&value) + get_size_of_string(key);
-        }
-    }
-
-    fn keys(&self) -> Keys<String, String> {
-        self.data.keys()
-    }
-
-    fn count(&self) -> usize {
-        self.data.len()
-    }
-
-    fn size(&self) -> usize {
-        self.bytes
-    }
-}
 
 #[cfg(not(test))]
 fn main() {
@@ -97,10 +25,10 @@ fn main() {
     let mut config_content = String::new();
     let _ = config_file.read_to_string(&mut config_content);
 
-    let config: Config = toml::from_str(config_content.as_str()).unwrap();
+    let config: config::Config = toml::from_str(config_content.as_str()).unwrap();
 
     // Set up cache
-    let mut cache = Cache::new(config);
+    let mut cache = cache::Cache::new(config);
 
     // Start REPL
     let mut con = Context::new();
@@ -196,11 +124,11 @@ mod test {
 
     #[test]
     fn get_size_of_simple_string() {
-        assert_eq!(get_size_of_string(&String::from("hello")), 5usize);
+        assert_eq!(mem::get_size_of_string(&String::from("hello")), 5usize);
     }
 
     #[test]
     fn get_size_of_emoji_string() {
-        assert_eq!(get_size_of_string(&String::from("❤️")), 6usize);
+        assert_eq!(mem::get_size_of_string(&String::from("❤️")), 6usize);
     }
 }
