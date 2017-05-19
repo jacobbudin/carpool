@@ -9,21 +9,23 @@ use std::collections::HashMap;
 use std::collections::hash_map::Keys;
 use std::fs::File;
 use std::io::{ErrorKind, Read};
-use std::mem;
 use std::path::Path;
 
 type Data = HashMap<String, String>;
 
+#[allow(dead_code)]
 #[derive(Deserialize)]
 struct CacheConfig {
     ttl: usize,
 }
 
+#[allow(dead_code)]
 #[derive(Deserialize)]
 struct Config {
     cache: CacheConfig,
 }
 
+#[allow(dead_code)]
 struct Cache {
     data: Box<Data>,
     config: Config,
@@ -35,7 +37,15 @@ fn get_size_of_string(s: &String) -> usize {
 }
 
 impl Cache {
-    fn clear(&mut self) {
+    fn new(config: Config) -> Cache {
+        Self {
+            config: config,
+            data: Box::new(HashMap::new()),
+            bytes: 0,
+        }
+    }
+
+    fn empty(&mut self) {
         self.data.clear();
         self.bytes = 0;
     }
@@ -90,16 +100,11 @@ fn main() {
     let config: Config = toml::from_str(config_content.as_str()).unwrap();
 
     // Set up cache
-    let mut cache = Cache {
-        config: config,
-        data: Box::new(HashMap::new()),
-        bytes: 0,
-    };
-
-    let empty_value = String::from("");
+    let mut cache = Cache::new(config);
 
     // Start REPL
     let mut con = Context::new();
+    let empty_value = String::from("");
 
     loop {
         let res = con.read_line("> ", &mut |_| {});
@@ -124,7 +129,7 @@ fn main() {
                             println!("key cannot contain space");
                             continue
                         }
-                        let value = cache.delete(&key_trimmed);
+                        let _ = cache.delete(&key_trimmed);
                     }
                     s if s.starts_with("set ") =>  {
                         let (_, key_value) = s.split_at(4);
@@ -137,6 +142,9 @@ fn main() {
                             }
                             None => println!("no value specified")
                         }
+                    }
+                    "reset" =>  {
+                        cache.empty();
                     }
                     "count" =>  {
                         println!("{}", cache.count());
