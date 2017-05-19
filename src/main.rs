@@ -9,23 +9,14 @@ mod mem;
 
 use liner::Context;
 use liner::KeyBindings;
-use std::fs::File;
-use std::io::{ErrorKind, Read};
+use std::io::ErrorKind;
 use std::path::Path;
 
 #[cfg(not(test))]
 fn main() {
-    // Open and read configuration
+    // Load configuration
     let config_path = Path::new("etc/carpool.toml");
-    let mut config_file = match File::open(&config_path) {
-        Err(_) => panic!("couldn't open {:?}", config_path),
-        Ok(file) => file,
-    };
-
-    let mut config_content = String::new();
-    let _ = config_file.read_to_string(&mut config_content);
-
-    let config: config::Config = toml::from_str(config_content.as_str()).unwrap();
+    let config = config::load_config(&config_path);
 
     // Set up cache
     let mut cache = cache::Cache::new(config);
