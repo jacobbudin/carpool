@@ -62,6 +62,9 @@ fn main() {
                             None => println!("no value specified")
                         }
                     }
+                    "prune" =>  {
+                        cache.prune();
+                    }
                     "reset" =>  {
                         cache.empty();
                     }

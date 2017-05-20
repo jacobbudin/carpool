@@ -5,14 +5,14 @@ use toml;
 
 #[allow(dead_code)]
 #[derive(Deserialize)]
-struct CacheConfig {
-    ttl: usize,
+pub struct CacheConfig {
+    pub ttl: u64,
 }
 
 #[allow(dead_code)]
 #[derive(Deserialize)]
 pub struct Config {
-    cache: CacheConfig,
+    pub cache: CacheConfig,
 }
 
 /// Open and read Carpool configuration from file path
