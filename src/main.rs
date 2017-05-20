@@ -117,12 +117,8 @@ mod test {
     use super::*;
 
     #[test]
-    fn get_size_of_simple_string() {
+    fn test_get_size_of_string() {
         assert_eq!(mem::get_size_of_string(&String::from("hello")), 5usize);
-    }
-
-    #[test]
-    fn get_size_of_emoji_string() {
         assert_eq!(mem::get_size_of_string(&String::from("❤️")), 6usize);
     }
 }
