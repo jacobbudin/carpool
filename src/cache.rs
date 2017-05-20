@@ -72,8 +72,20 @@ impl Cache {
     }
 
     /// Get an entry from cache by key
-    pub fn get(&mut self, key: &String) -> Option<&String> {
-        self.data.get(key).and_then(|e| Some(&e.value))
+    pub fn get(&self, key: &String) -> Option<&String> {
+        let entry = self.data.get(key);
+
+        if let Some(entry) = entry {
+            // Ensure entry isn't stale
+            let now = Instant::now();
+            let modified_elapsed_secs = now.duration_since(entry.modified).as_secs();
+
+            if modified_elapsed_secs > self.config.cache.ttl {
+                return None
+            }
+        }
+
+        entry.and_then(|e| Some(&e.value))
     }
 
     /// Insert an entry into cache
