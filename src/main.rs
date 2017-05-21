@@ -6,9 +6,9 @@ extern crate toml;
 mod cache;
 mod config;
 mod mem;
+mod server;
 
 use liner::Context;
-use liner::KeyBindings;
 use std::io::ErrorKind;
 use std::path::Path;
 
@@ -23,80 +23,17 @@ fn main() {
 
     // Start REPL
     let mut con = Context::new();
-    let empty_value = String::from("");
 
     loop {
         let res = con.read_line("> ", &mut |_| {});
 
         match res {
+            // Process request
             Ok(res) => {
-                match res.as_str() {
-                    s if s.trim() == "" =>  {}
-                    s if s.starts_with("get ") =>  {
-                        let (_, key) = s.split_at(4);
-                        let key_trimmed = String::from(key.trim());
-                        if key_trimmed.find(' ').is_some() {
-                            println!("key cannot contain space");
-                            continue
-                        }
-                        println!("{}", cache.get(&key_trimmed).unwrap_or(&empty_value));
-                    }
-                    s if s.starts_with("del ") =>  {
-                        let (_, key) = s.split_at(4);
-                        let key_trimmed = String::from(key.trim());
-                        if key_trimmed.find(' ').is_some() {
-                            println!("key cannot contain space");
-                            continue
-                        }
-                        let _ = cache.delete(&key_trimmed);
-                    }
-                    s if s.starts_with("set ") =>  {
-                        let (_, key_value) = s.split_at(4);
-                        match key_value.find(' ') {
-                            Some(i) => {
-                                let (key, value) = key_value.split_at(i);
-                                let key_trimmed = String::from(key.trim());
-                                let value_trimmed = String::from(value.trim());
-                                cache.set(key_trimmed, value_trimmed);
-                            }
-                            None => println!("no value specified")
-                        }
-                    }
-                    "prune" =>  {
-                        cache.prune();
-                    }
-                    "reset" =>  {
-                        cache.empty();
-                    }
-                    "count" =>  {
-                        println!("{}", cache.count());
-                    }
-                    "size" =>  {
-                        println!("{} bytes", cache.size());
-                    }
-                    "keys" =>  {
-                        for key in cache.keys() {
-                            println!("{}", key);
-                        }
-                    }
-                    "emacs" => {
-                        con.key_bindings = KeyBindings::Emacs;
-                        println!("emacs mode");
-                    }
-                    "vi" | "vim" =>  {
-                        con.key_bindings = KeyBindings::Vi;
-                        println!("vi mode");
-                    }
-                    "exit" =>  {
-                        break;
-                    }
-                    _ => {
-                        println!("operation not defined")
-                    }
-                }
-
+                server::handle(&mut cache, res.as_str());
                 con.history.push(res.into()).unwrap();
             }
+            // Or handle interrupt
             Err(e) => {
                 match e.kind() {
                     // ctrl-c pressed
