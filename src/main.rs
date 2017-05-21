@@ -1,4 +1,3 @@
-extern crate liner;
 #[macro_use]
 extern crate serde_derive;
 extern crate toml;
@@ -8,8 +7,8 @@ mod config;
 mod mem;
 mod server;
 
-use liner::Context;
-use std::io::ErrorKind;
+use std::io::{BufReader, BufRead, Write};
+use std::net::{TcpListener};
 use std::path::Path;
 
 #[cfg(not(test))]
@@ -21,29 +20,25 @@ fn main() {
     // Set up cache
     let mut cache = cache::Cache::new(config);
 
-    // Start REPL
-    let mut con = Context::new();
+    // Start listening
+    let listener = TcpListener::bind("127.0.0.1:8555").unwrap();
 
-    loop {
-        let res = con.read_line("> ", &mut |_| {});
+    for stream in listener.incoming() {
+        match stream {
+            Ok(stream) => {
+                // Read all to newline
+                let mut buffer = Vec::new();
+                let mut reader = BufReader::new(stream);
+                let _read_result = reader.read_until(b'\n', &mut buffer);
+                let mut consumed_stream = reader.into_inner();
 
-        match res {
-            // Process request
-            Ok(res) => {
-                server::handle(&mut cache, res.as_str());
-                con.history.push(res.into()).unwrap();
+                // Get and write response
+                let request = String::from_utf8(buffer).unwrap();
+                let response = server::handle(&mut cache, request.as_str());
+                let _write_result = consumed_stream.write_all(response.as_bytes());
             }
-            // Or handle interrupt
-            Err(e) => {
-                match e.kind() {
-                    // ctrl-c pressed
-                    ErrorKind::Interrupted => {}
-                    // ctrl-d pressed
-                    ErrorKind::UnexpectedEof => {
-                        break;
-                    }
-                    _ => panic!("error: {:?}", e),
-                }
+            Err(_) => {
+                break;
             }
         }
     }

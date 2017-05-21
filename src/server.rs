@@ -1,7 +1,8 @@
 use cache::Cache;
+use std::fmt;
 
 /// Process a request against the cache
-pub fn handle(cache: &mut Cache, command: &str) {
+pub fn handle(cache: &mut Cache, command: &str) -> String {
     match command {
         s if s.trim() == "" =>  {}
         s if s.starts_with("get ") =>  {
@@ -9,16 +10,16 @@ pub fn handle(cache: &mut Cache, command: &str) {
             let key_trimmed = String::from(key.trim());
             if key_trimmed.find(' ').is_some() {
                 println!("key cannot contain space");
-                return
+                return "".to_owned()
             }
-            println!("{}", cache.get(&key_trimmed).unwrap_or(&"".to_owned()));
+            return fmt::format(format_args!("{}", cache.get(&key_trimmed).unwrap_or(&"".to_owned())));
         }
         s if s.starts_with("del ") =>  {
             let (_, key) = s.split_at(4);
             let key_trimmed = String::from(key.trim());
             if key_trimmed.find(' ').is_some() {
                 println!("key cannot contain space");
-                return
+                return "".to_owned()
             }
             let _ = cache.delete(&key_trimmed);
         }
@@ -41,10 +42,10 @@ pub fn handle(cache: &mut Cache, command: &str) {
             cache.empty();
         }
         "count" =>  {
-            println!("{}", cache.count());
+            return fmt::format(format_args!("{}", cache.count()));
         }
         "size" =>  {
-            println!("{} bytes", cache.size());
+            return fmt::format(format_args!("{} bytes", cache.size()));
         }
         "keys" =>  {
             for key in cache.keys() {
@@ -55,4 +56,6 @@ pub fn handle(cache: &mut Cache, command: &str) {
             println!("operation not defined")
         }
     }
+
+    "".to_owned()
 }
